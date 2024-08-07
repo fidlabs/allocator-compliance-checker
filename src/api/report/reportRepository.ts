@@ -75,7 +75,7 @@ export const reportRepository = {
       clientsDeals
     );
 
-    content.push('# Compliance Report');
+    content.push(`# Compliance Report - ${dayjs().format('YYYY-MM-DD')}`);
     content.push("## Allocator's Info");
     const header = await reportRepository.reportHeaderContent(
       verifiersData,
