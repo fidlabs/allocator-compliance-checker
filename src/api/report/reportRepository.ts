@@ -522,6 +522,7 @@ export const reportRepository = {
 
     clientInfo.forEach((client) => {
       let dealIdx = 0;
+      let dealRest = 0n;
       for (const { allocation, allocationTimestamp } of client.allocations) {
         let allocationUsed = 0n;
         let threshold = 0;
@@ -530,7 +531,12 @@ export const reportRepository = {
 
           const allocationDate = dayjs.unix(allocationTimestamp);
           const dealDate = dayjs.unix(clientDeals.term_start_from);
-          allocationUsed += clientDeals.deal_value;
+          if (dealRest > 0) {
+            allocationUsed += dealRest;
+          } else {
+            allocationUsed += clientDeals.deal_value;
+          }
+          dealRest = 0n;
           const diff = dealDate.diff(allocationDate, 'days');
 
           if (threshold === 0) {
@@ -564,7 +570,8 @@ export const reportRepository = {
               timeToReachThreshold.full.push(diff);
             }
             threshold = 4;
-            allocationUsed = allocationUsed - BigInt(allocation);
+            dealRest = allocationUsed - BigInt(allocation);
+            if (dealRest === 0n) dealIdx++;
             break;
           }
         }
