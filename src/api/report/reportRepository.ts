@@ -778,7 +778,7 @@ export const reportRepository = {
       content.push(
         `| Allowance | Client ID | Name | Issue Created |Allocation Amount | Time Since Previous Allocation | Time from Allocation Request to On-chain |`
       );
-      content.push('|-|-|-|-|-|');
+      content.push('|-|-|-|-|-|-|-|');
       client.allowanceArray.sort((a, b) => (a.createMessageTimestamp > b.createMessageTimestamp ? 1 : -1));
       client.allowanceArray.forEach((allocation, idx) => {
         const allocationDate = dayjs.unix(allocation.createMessageTimestamp);
