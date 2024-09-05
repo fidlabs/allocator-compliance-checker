@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { CronJob } from 'cron';
 
 import { reportService } from './api/report/reportService';
 
@@ -37,11 +36,4 @@ async function refresh() {
   }
 }
 
-export default function run() {
-  CronJob.from({
-    cronTime: '0 0 0 * * *',
-    onTick: refresh,
-    start: true,
-    timeZone: 'UTC',
-  });
-}
+refresh();
