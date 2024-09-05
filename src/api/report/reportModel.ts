@@ -25,9 +25,11 @@ export const GetReportGenSchema = z.object({
 });
 
 export interface ClientsDeals {
+  total_deal_size: bigint;
+  term_start_from: number;
+  term_start_to: number;
+  client: string;
   deal_value: bigint;
-  deal_timestamp: number;
-  client_id: string;
 }
 
 export interface AllowanceArrayItem {

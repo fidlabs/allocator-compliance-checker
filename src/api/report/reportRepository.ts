@@ -294,7 +294,7 @@ export const reportRepository = {
   getStorageProvidersDistribution: async (clients: string[]): Promise<ProviderDistributionTable[] | []> => {
     const currentEpoch = getCurrentEpoch();
     logger.info({ clients, currentEpoch }, 'Getting storage provider distribution');
-    const queryResult = await db.query(providerDistributionQuery, [clients, currentEpoch]);
+    const queryResult = await db.query(providerDistributionQuery, [clients]);
     const distributions: ProviderDistribution[] = queryResult.rows;
     const providers = distributions.map((r) => r.provider);
     if (providers.length === 0) {
@@ -471,11 +471,11 @@ export const reportRepository = {
       const values = [clientAddressIds];
 
       const result = await db.query(clientDealsQuery, values);
-
       const data = result.rows.map((row) => ({
         ...row,
-        deal_timestamp: heightToUnix(Number(row.deal_timestamp)),
-        deal_value: BigInt(row.deal_value),
+        term_start_from: heightToUnix(row.term_start_from),
+        term_start_to: heightToUnix(row.term_start_to),
+        deal_value: BigInt(row.total_deal_size),
       }));
       return data;
     } catch (error) {
@@ -514,8 +514,8 @@ export const reportRepository = {
       full: 0,
     };
 
-    const groupedClientDeals = clientsDeals.reduce((groups: Record<string, ClientsDeals[]>, deal) => {
-      const key = deal.client_id;
+    const groupedClientDealSize = clientsDeals.reduce((groups: Record<string, ClientsDeals[]>, deal) => {
+      const key = deal.client;
       if (!groups[key]) {
         groups[key] = [];
       }
@@ -525,15 +525,21 @@ export const reportRepository = {
 
     clientInfo.forEach((client) => {
       let dealIdx = 0;
+      let dealRest = 0n;
       for (const { allocation, allocationTimestamp } of client.allocations) {
         let allocationUsed = 0n;
         let threshold = 0;
-        for (; dealIdx < groupedClientDeals[client.addressId]?.length; dealIdx++) {
-          const deal = groupedClientDeals[client.addressId][dealIdx];
+        for (; dealIdx < groupedClientDealSize[client.addressId]?.length; dealIdx++) {
+          const clientDeals = groupedClientDealSize[client.addressId][dealIdx];
 
           const allocationDate = dayjs.unix(allocationTimestamp);
-          const dealDate = dayjs.unix(deal.deal_timestamp);
-          allocationUsed += deal.deal_value;
+          const dealDate = dayjs.unix(clientDeals.term_start_from);
+          if (dealRest > 0) {
+            allocationUsed += dealRest;
+          } else {
+            allocationUsed += clientDeals.deal_value;
+          }
+          dealRest = 0n;
           const diff = dealDate.diff(allocationDate, 'days');
 
           if (threshold === 0) {
@@ -567,10 +573,11 @@ export const reportRepository = {
               timeToReachThreshold.full.push(diff);
             }
             threshold = 4;
+            dealRest = allocationUsed - BigInt(allocation);
+            if (dealRest === 0n) dealIdx++;
             break;
           }
         }
-
         switch (threshold) {
           case 0:
             allocationUnused.first++;
