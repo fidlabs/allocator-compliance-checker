@@ -796,7 +796,7 @@ export const reportRepository = {
           const previousAllocationDate = dayjs.unix(client.allowanceArray[idx - 1].createMessageTimestamp);
           durationBetweenAllocationRequest = formattedTimeDiff(previousAllocationDate, allocationDate);
         }
-        if (idx === 0) {
+        if (idx === 0 && allocation.issueCreateTimestamp) {
           const issueCreateDate = dayjs.unix(allocation.issueCreateTimestamp);
           timeFromAllocationToApproval = formattedTimeDiff(issueCreateDate, allocationDate);
         }
@@ -811,7 +811,7 @@ export const reportRepository = {
         const issueCreated = dayjs.unix(allocation.createMessageTimestamp).utc().format('YYYY-MM-DD');
 
         content.push(
-          `| ${issueGhLink} |${client.addressId} | ${client.name || '-'} | ${allowance} | ${issueCreated} | ${durationBetweenAllocationRequest} | ${timeFromAllocationToApproval} |`
+          `| ${issueGhLink} |${client.addressId} | ${client.name || '-'} | ${issueCreated} | ${allowance} | ${durationBetweenAllocationRequest} | ${timeFromAllocationToApproval} |`
         );
       });
 
