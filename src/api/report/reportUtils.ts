@@ -1,8 +1,8 @@
+import dayjs from 'dayjs';
 import { emojify } from 'node-emoji';
 import xbytes from 'xbytes';
 
 import { GrantedDatacapInClients } from './reportModel';
-import dayjs from 'dayjs';
 
 export const reportUtils = {
   distinctSizesOfAllocations: (grantedDatacapInClients: GrantedDatacapInClients[]) => {
@@ -43,7 +43,7 @@ export const generateClientsRow = async (e: any, flaggedClientsInfo: any[], repo
 
   const cidReportUrl = await reportRepository.getClientCidReportUrl(e.address);
 
-  return `| ${warning} ${e.addressId}| ${e.name || '-'} | ${e.allowanceArray.length} | ${xbytes(totalAllocations)} | [Filecoin Pulse](${linkToInteractions}) | ${cidReportUrl} |`;
+  return `| ${warning} ${e.addressId}| ${e.name || '-'} | ${e.allowanceArray.length} | ${xbytes(totalAllocations, { iec: true })} | [Filecoin Pulse](${linkToInteractions}) | ${cidReportUrl} |`;
 };
 
 const groupByAddressId = (grantedDatacapInClients: GrantedDatacapInClients[]) =>

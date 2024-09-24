@@ -800,7 +800,7 @@ export const reportRepository = {
           const issueCreateDate = dayjs.unix(allocation.issueCreateTimestamp);
           timeFromAllocationToApproval = formattedTimeDiff(issueCreateDate, allocationDate);
         }
-        const allowance = xbytes(allocation.allowance);
+        const allowance = xbytes(allocation.allowance, { iec: true });
         if (allocation.auditTrail) {
           const info = getInfoFromGithubIssueUrl(allocation.auditTrail);
           if (info) {
