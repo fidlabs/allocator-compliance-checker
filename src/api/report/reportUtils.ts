@@ -2,13 +2,16 @@ import dayjs from 'dayjs';
 import { emojify } from 'node-emoji';
 import xbytes from 'xbytes';
 
-import { GrantedDatacapInClients } from './reportModel';
+import { ClientsByVerifier, GrantedDatacapInClients } from './reportModel';
 
 export const reportUtils = {
-  distinctSizesOfAllocations: (grantedDatacapInClients: GrantedDatacapInClients[]) => {
+  distinctSizesOfAllocations: (
+    grantedDatacapInClients: GrantedDatacapInClients[],
+    auditTrails: { [key: string]: string }
+  ) => {
     const groupedByAddressId = groupByAddressId(grantedDatacapInClients);
     const groupsSortedByTimestamp = sortGroupsByTimestamp(groupedByAddressId);
-    return createContent(groupsSortedByTimestamp);
+    return createContent(groupsSortedByTimestamp, auditTrails);
   },
   datacapInClients: (grantedDatacapInClients: GrantedDatacapInClients[]) => {
     const groupedByAddressId = groupByAddressId(grantedDatacapInClients);
@@ -34,7 +37,12 @@ export const formattedTimeDiff = (from: dayjs.Dayjs, to: dayjs.Dayjs): string =>
   return `${hours} hours`;
 };
 
-export const generateClientsRow = async (e: any, flaggedClientsInfo: any[], reportRepository: any) => {
+export const generateClientsRow = async (
+  e: ClientsByVerifier,
+  flaggedClientsInfo: any[],
+  reportRepository: any,
+  auditTrails: { [key: string]: string }
+) => {
   const totalAllocations = e.allowanceArray.reduce((acc: number, curr: any) => acc + Number(curr.allowance), 0);
   const warning = flaggedClientsInfo.find((flaggedClient) => flaggedClient.addressId === e.addressId)
     ? emojify(':warning:')
@@ -43,7 +51,8 @@ export const generateClientsRow = async (e: any, flaggedClientsInfo: any[], repo
 
   const cidReportUrl = await reportRepository.getClientCidReportUrl(e.address);
 
-  return `| ${warning} ${e.addressId}| ${e.name || '-'} | ${e.allowanceArray.length} | ${xbytes(totalAllocations, { iec: true })} | [Filecoin Pulse](${linkToInteractions}) | ${cidReportUrl} |`;
+  const userId = auditTrails[e.addressId] ? `[${e.addressId}](${auditTrails[e.addressId]})` : e.addressId;
+  return `| ${warning} ${userId} | ${e.name || '-'} | ${e.allowanceArray.length} | ${xbytes(totalAllocations, { iec: true })} | [Filecoin Pulse](${linkToInteractions}) | ${cidReportUrl} |`;
 };
 
 const groupByAddressId = (grantedDatacapInClients: GrantedDatacapInClients[]) =>
@@ -71,7 +80,11 @@ const sortGroupsByTimestamp = (
   }));
 
 const createContent = (
-  groupsSortedByTimestamp: { addressId: string; allocations: { allocation: number; allocationTimestamp: number }[] }[]
+  groupsSortedByTimestamp: {
+    addressId: string;
+    allocations: { allocation: number; allocationTimestamp: number }[];
+  }[],
+  auditTrails: { [key: string]: string }
 ) => {
   const content = [];
   content.push(
@@ -95,8 +108,9 @@ const createContent = (
     const remainingAllocations = allocations.slice(3);
     const remainingAlloc =
       remainingAllocations.map((allocation) => xbytes(Number(allocation.allocation), { iec: true })).join(', ') || '-';
+    const userId = auditTrails[addressId] ? `[${addressId}](${auditTrails[addressId]})` : addressId;
     content.push(
-      `|${addressId}| ${allocationWithPercentage[0] || '-'} | ${allocationWithPercentage[1] || '-'} | ${allocationWithPercentage[2] || '-'} | ${remainingAlloc} |`
+      `|${userId}| ${allocationWithPercentage[0] || '-'} | ${allocationWithPercentage[1] || '-'} | ${allocationWithPercentage[2] || '-'} | ${remainingAlloc} |`
     );
   });
   content.push('');

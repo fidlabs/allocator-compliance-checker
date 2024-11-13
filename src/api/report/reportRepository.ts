@@ -86,8 +86,15 @@ export const reportRepository = {
     content = [...content, ...header];
 
     if (Number(clientsData.count)) {
+      const auditTrails = clientsData.data.reduce((map: { [key: string]: string }, client) => {
+        const allocation = client.allowanceArray.find(
+          (allowance) => allowance.verifierAddressId == verifiersData.addressId
+        );
+        if (allocation?.auditTrail) map[client.addressId] = allocation.auditTrail;
+        return map;
+      }, {});
       const clientsRows = await Promise.all(
-        clientsData.data.map((e) => generateClientsRow(e, flaggedClientsInfo, reportRepository))
+        clientsData.data.map((e) => generateClientsRow(e, flaggedClientsInfo, reportRepository, auditTrails))
       );
       // Generate bar chart image for clients datacap issuance
       content.push('');
@@ -123,7 +130,7 @@ export const reportRepository = {
       });
 
       //calculate distinct sizes of allocations table
-      const distinctSizesOfAllocations = reportUtils.distinctSizesOfAllocations(grantedDatacapInClients);
+      const distinctSizesOfAllocations = reportUtils.distinctSizesOfAllocations(grantedDatacapInClients, auditTrails);
       content.push(distinctSizesOfAllocations);
 
       content.push('## Histograms of time passed until the part of the allocation is used by the clients');
